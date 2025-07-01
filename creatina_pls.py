@@ -60,10 +60,18 @@ loo = LeaveOneOut()
 y_loo_pred = cross_val_predict(pls, X, y, cv=loo).ravel()
 rmsecv = np.sqrt(mean_squared_error(y, y_loo_pred))
 
+# Métrica REP (Relative Error of Prediction)
+rep = (rmsep / np.mean(y)) * 100  # em %
+# Métrica RPD (Ratio of Performance to Deviation)
+std_y = np.std(y, ddof=1)
+rpd = std_y / rmsep
+
 # Exibir métricas
 print(f"R²:     {r2:.6f}")
 print(f"RMSEP:  {rmsep:.6f}")
 print(f"RMSECV: {rmsecv:.6f}")
+print(f"REP (%):  {rep:.2f}")
+print(f"RPD:      {rpd:.2f}")
 
 #Visualizar real vs predito
 plt.figure(figsize=(9, 6))
@@ -72,9 +80,56 @@ plt.plot([y.min(), y.max()], [y.min(), y.max()], 'r--')
 plt.xlabel("Valor Real")
 plt.ylabel("Valor Predito")
 plt.title("Regressão PLS - Real vs Predito")
-plt.text(min(y), max(y), f"R² = {r2:.4f}\nRMSEP = {rmsep:.4f}", 
+plt.text(min(y), max(y), f"R² = {r2:.4f}", 
          fontsize=12, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.7))
 plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+
+#Gráfico EJCR
+from scipy.stats import f
+from sklearn.linear_model import LinearRegression
+# Regressão linear: y_true em função de y_pred
+X = y_pred.reshape(-1, 1)
+
+model = LinearRegression().fit(X, y)
+intercept = model.intercept_
+slope = model.coef_[0]
+
+# Resíduos e matriz de covariância dos coeficientes
+y_fit = model.predict(X)
+residuals = y - y_fit
+n = len(y)
+X_design = np.column_stack((np.ones_like(X), X))  # matriz de projeto [1, x]
+cov_matrix = np.linalg.inv(X_design.T @ X_design) * np.sum(residuals**2) / (n - 2)
+
+# Parâmetros do EJCR
+b = np.array([intercept, slope])
+b0 = np.array([0, 1])  # modelo ideal
+alpha = 0.05
+F_crit = f.ppf(1 - alpha, dfn=2, dfd=n - 2)
+radius = np.sqrt(F_crit)
+
+# Elipse EJCR
+theta = np.linspace(0, 2 * np.pi, 100)
+circle = np.array([np.cos(theta), np.sin(theta)])
+L = np.linalg.cholesky(cov_matrix * radius**2)
+ellipse = b0[:, None] + L @ circle
+
+# Plot
+fig, ax = plt.subplots(figsize=(6, 6))
+ax.plot(ellipse[0], ellipse[1], label='EJCR (95%)')
+ax.plot(intercept, slope, 'ro', label='Modelo estimado', markersize=8)
+ax.plot(0, 1, 'go', label='Modelo ideal (0,1)')
+ax.set_xlabel('Intercepto')
+ax.set_ylabel('Inclinação')
+ax.set_title('Região de Confiança Conjunta Estendida (EJCR)')
+ax.axhline(1, color='gray', linestyle='--')
+ax.axvline(0, color='gray', linestyle='--')
+ax.grid(True)
+ax.legend()
+ax.set_aspect('auto')
 plt.tight_layout()
 plt.show()
 
