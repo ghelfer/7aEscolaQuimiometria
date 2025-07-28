@@ -97,6 +97,10 @@ for train_index, test_index in loo.split(X):
 y_true = np.array(y_true)
 y_pred = np.array(y_pred)
 
+# Salvar y_pred em CSV
+y_pred_df = pd.DataFrame({'y_true': y, 'y_pred': y_pred.ravel()})
+y_pred_df.to_csv("y_crea_tf.csv", index=False)
+
 # Avaliação
 rmsecv = np.sqrt(mean_squared_error(y_true, y_pred))
 print(f"RMSECV: {rmsecv:.6f}")
@@ -118,6 +122,12 @@ print(f"RPD:      {rpd:.2f}")
 #Gráfico EJCR
 from scipy.stats import f
 from sklearn.linear_model import LinearRegression
+
+# Carregar os dados
+df = pd.read_csv("y_crea_tf.csv")
+y = df['y_true'].values
+y_pred = df['y_pred'].values
+
 # Regressão linear: y_true em função de y_pred
 X = y_pred.reshape(-1, 1)
 
@@ -147,7 +157,7 @@ ellipse = b0[:, None] + L @ circle
 
 # Plot
 fig, ax = plt.subplots(figsize=(6, 6))
-ax.plot(ellipse[0], ellipse[1], label='EJCR (95%)')
+ax.plot(ellipse[0], ellipse[1], label='EJCR (95%)', markersize=8)
 ax.plot(intercept, slope, 'ro', label='Modelo estimado', markersize=8)
 ax.plot(0, 1, 'go', label='Modelo ideal (0,1)')
 ax.set_xlabel('Intercepto')

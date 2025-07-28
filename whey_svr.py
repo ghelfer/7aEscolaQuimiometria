@@ -48,7 +48,10 @@ svr.fit(X, y)
 
 # Predições
 y_pred = svr.predict(X)
-y1 = y_pred
+
+# Salvar y_pred em CSV
+y_pred_df = pd.DataFrame({'y_true': y, 'y_pred': y_pred.ravel()})
+y_pred_df.to_csv("y_whey_svr.csv", index=False)
 
 # Avaliações
 rmsep = np.sqrt(mean_squared_error(y, y_pred))
@@ -58,6 +61,10 @@ r2 = r2_score(y, y_pred)
 loo = LeaveOneOut()
 y_loo_pred = cross_val_predict(svr, X, y, cv=loo).ravel()
 rmsecv = np.sqrt(mean_squared_error(y, y_loo_pred))
+
+# Salvar y_pred em CSV
+y_pred_df = pd.DataFrame({'y_true': y, 'y_pred': y_loo_pred.ravel()})
+y_pred_df.to_csv("y_whey_svr.csv", index=False)
 
 # Métrica REP (Relative Error of Prediction)
 rep = (rmsep / np.mean(y)) * 100  # em %
@@ -71,6 +78,15 @@ print(f"RMSEP:  {rmsep:.6f}")
 print(f"RMSECV: {rmsecv:.6f}")
 print(f"REP (%):  {rep:.2f}")
 print(f"RPD:      {rpd:.2f}")
+
+#Visualizar modelo
+plt.figure(figsize=(9, 6))
+plt.scatter(y, y_pred, color='darkorange',
+            label='data')
+plt.plot(y, y_loo_pred, color='cornflowerblue',
+         label='prediction')
+plt.legend()
+plt.show()
 
 
 #Visualizar real vs predito
@@ -127,9 +143,14 @@ plt.show()
 #Gráfico EJCR
 from scipy.stats import f
 from sklearn.linear_model import LinearRegression
+
+# Carregar os dados
+df = pd.read_csv("y_whey_svr.csv")
+y = df['y_true'].values
+y_pred = df['y_pred'].values
+
 # Regressão linear: y_true em função de y_pred
-X = y1.reshape(-1, 1)
-y = y0.reshape(-1, 1)
+X = y_pred.reshape(-1, 1)
 
 model = LinearRegression().fit(X, y)
 intercept = model.intercept_
@@ -157,7 +178,7 @@ ellipse = b0[:, None] + L @ circle
 
 # Plot
 fig, ax = plt.subplots(figsize=(6, 6))
-ax.plot(ellipse[0], ellipse[1], label='EJCR (95%)')
+ax.plot(ellipse[0], ellipse[1], label='EJCR (95%)', markersize=8)
 ax.plot(intercept, slope, 'ro', label='Modelo estimado', markersize=8)
 ax.plot(0, 1, 'go', label='Modelo ideal (0,1)')
 ax.set_xlabel('Intercepto')

@@ -48,7 +48,10 @@ svr.fit(X, y)
 
 # Predições
 y_pred = svr.predict(X)
-y1 = y_pred
+
+# Salvar y_pred em CSV
+y_pred_df = pd.DataFrame({'y_true': y, 'y_pred': y_pred.ravel()})
+y_pred_df.to_csv("y_crea_svr.csv", index=False)
 
 # Avaliações
 rmsep = np.sqrt(mean_squared_error(y, y_pred))
@@ -125,9 +128,14 @@ plt.show()
 #Gráfico EJCR
 from scipy.stats import f
 from sklearn.linear_model import LinearRegression
+
+# Carregar os dados
+df = pd.read_csv("y_crea_svr.csv")
+y = df['y_true'].values
+y_pred = df['y_pred'].values
+
 # Regressão linear: y_true em função de y_pred
-X = y1.reshape(-1, 1)
-y = y0.reshape(-1, 1)
+X = y_pred.reshape(-1, 1)
 
 model = LinearRegression().fit(X, y)
 intercept = model.intercept_
@@ -155,7 +163,7 @@ ellipse = b0[:, None] + L @ circle
 
 # Plot
 fig, ax = plt.subplots(figsize=(6, 6))
-ax.plot(ellipse[0], ellipse[1], label='EJCR (95%)')
+ax.plot(ellipse[0], ellipse[1], label='EJCR (95%)', markersize=8)
 ax.plot(intercept, slope, 'ro', label='Modelo estimado', markersize=8)
 ax.plot(0, 1, 'go', label='Modelo ideal (0,1)')
 ax.set_xlabel('Intercepto')
@@ -167,6 +175,14 @@ ax.grid(True)
 ax.legend()
 ax.set_aspect('auto')
 plt.tight_layout()
+plt.show()
+
+
+plt.scatter(X, y, color='darkorange',
+            label='data')
+plt.plot(X, y_fit, color='cornflowerblue',
+         label='prediction')
+plt.legend()
 plt.show()
 
 

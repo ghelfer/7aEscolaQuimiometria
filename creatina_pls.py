@@ -51,6 +51,10 @@ pls.fit(X, y)
 y_pred = pls.predict(X)
 #print(y_pred)
 
+# Salvar y_pred em CSV
+y_pred_df = pd.DataFrame({'y_true': y, 'y_pred': y_pred.ravel()})
+y_pred_df.to_csv("y_crea_pls.csv", index=False)
+
 # Avaliações
 r2 = r2_score(y, y_pred)
 rmsep = np.sqrt(mean_squared_error(y, y_pred))
@@ -59,6 +63,22 @@ rmsep = np.sqrt(mean_squared_error(y, y_pred))
 loo = LeaveOneOut()
 y_loo_pred = cross_val_predict(pls, X, y, cv=loo).ravel()
 rmsecv = np.sqrt(mean_squared_error(y, y_loo_pred))
+
+# Salvar y_pred em CSV
+y_pred_df = pd.DataFrame({'y_true': y, 'y_pred': y_loo_pred.ravel()})
+y_pred_df.to_csv("y_crea_pls.csv", index=False)
+
+# Calcular RMSECV para 1 a 12 fatores
+resultados = []
+for n in range(1, 13):
+    pls = PLSRegression(n_components=n, scale=False)
+    y_pred_cv = cross_val_predict(pls, X, y, cv=LeaveOneOut()).ravel()
+    rmsecv = np.sqrt(mean_squared_error(y, y_pred_cv))
+    resultados.append({'n_componentes': n, 'RMSECV': rmsecv})
+
+# Salvar em CSV
+df_resultados = pd.DataFrame(resultados)
+df_resultados.to_csv("rmsecv_crea_fator.csv", index=False)
 
 # Métrica REP (Relative Error of Prediction)
 rep = (rmsep / np.mean(y)) * 100  # em %
